@@ -1,24 +1,25 @@
 import hashlib
-import os
+from pathlib import Path
 
 GIT_DIRECTORY = '.mygit'
+IGNORE_DIRECTORY = '.mygitignore'
 
 def init():
-    os.makedirs(GIT_DIRECTORY)
-    os.makedirs(os.path.join(GIT_DIRECTORY, 'objects'))
-    print(f'Initialized empty mygit repository in {os.path.join(os.getcwd(), GIT_DIRECTORY)}')
+    (Path(GIT_DIRECTORY) / 'objects').mkdir(parents=True, exist_ok=False)
+    Path(IGNORE_DIRECTORY).touch()
+    Path(IGNORE_DIRECTORY).write_text("*.mygitignore/")
+    print(f'Initialized empty mygit repository in {Path(GIT_DIRECTORY).absolute()}')
 
 def hash_object(data, obj_type ='blob'):
     obj = obj_type.encode() + b'\x00' + data
     obj_id = hashlib.sha1(obj).hexdigest()
-    with open(f'{os.path.join(GIT_DIRECTORY, 'objects', obj_id)}', 'wb') as output:
-        output.write(obj)
+
+    (Path('.') / GIT_DIRECTORY / 'objects' / obj_id).write_bytes(obj)
 
     return obj_id
 
 def get_object(obj_id, expected_type ='blob'):
-    with open(f'{os.path.join(GIT_DIRECTORY, "objects", obj_id)}', 'rb') as f:
-        obj = f.read()
+    obj = (Path('.') / GIT_DIRECTORY / 'objects' / obj_id).read_bytes()
 
     obj_type, _, content = obj.partition(b'\x00')
     obj_type = obj_type.decode()
